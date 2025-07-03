@@ -24,19 +24,16 @@ const DOM = {
 };
 
 const keywordMap = {
-    // Vibes
     romance: 'love OR romance OR uplifting',
     mystery: 'mystery OR thriller OR suspense',
     philosophy: 'life OR philosophy OR introspection',
     fantasy: 'fantasy OR magic OR adventure',
     nonfiction: 'non-fiction OR true story OR biography',
-    // Characters
     detective: 'detective OR crime OR investigation',
     dystopia: 'dystopia OR rebellion OR society',
     fantasy_character: 'wizard OR chosen one OR fantasy hero',
     literature: 'philosopher OR thinker OR classic literature',
     science: 'inventor OR science OR tech innovator',
-    // Settings
     fairy_tale: 'fairy tale OR enchanted kingdom',
     crime: 'city OR noir OR gritty',
     'sci-fi': 'space OR future OR sci-fi',
@@ -144,7 +141,8 @@ function addBookCardListeners(container) {
     container.querySelectorAll('.remove-book').forEach(button => {
         button.addEventListener('click', () => {
             const key = button.dataset.key;
-            const saved = JSON.parse(localStorage.getItem('savedBooks') || '[]').filter(bookKey => bookKey !== key);
+            const saved = JSON.parse(localStorage.getItem('savedBooks') || '[]')
+                .filter(bookKey => bookKey !== key);
             localStorage.setItem('savedBooks', JSON.stringify(saved));
             showSavedBooks();
         });
@@ -273,6 +271,20 @@ async function showSavedBooks() {
     }
 }
 
+function enableMobileCardToggle() {
+    if (window.innerWidth <= 768) {
+        document.querySelectorAll('.book-card').forEach(card => {
+            card.addEventListener('click', function (e) {
+                if (e.target.closest('.book-details')) return;
+                document.querySelectorAll('.book-card.show-details').forEach(openCard => {
+                    if (openCard !== card) openCard.classList.remove('show-details');
+                });
+                card.classList.toggle('show-details');
+            });
+        });
+    }
+}
+
 function initEventListeners() {
     DOM.searchBtn.addEventListener('click', e => {
         e.preventDefault();
@@ -314,14 +326,26 @@ function initEventListeners() {
 
     const backBtn = document.getElementById('back-to-picker-btn');
     if (backBtn) {
-        backBtn.addEventListener('click', () => {
-            toggleSection('inputModal');
-        });
+        backBtn.addEventListener('click', () => toggleSection('inputModal'));
     }
 
     if (DOM.restartBtn) {
         DOM.restartBtn.addEventListener('click', () => toggleSection('intro'));
     }
+
+    // Mobile Nav Toggle
+    const hamburger = document.getElementById('hamburger-btn');
+    const navLinks = document.querySelector('.nav-links');
+    if (hamburger && navLinks) {
+        hamburger.addEventListener('click', function () {
+            navLinks.classList.toggle('open');
+            const expanded = hamburger.getAttribute('aria-expanded') === 'true';
+            hamburger.setAttribute('aria-expanded', !expanded);
+        });
+    }
 }
 
-document.addEventListener('DOMContentLoaded', initEventListeners);
+document.addEventListener('DOMContentLoaded', () => {
+    initEventListeners();
+    enableMobileCardToggle();
+});
