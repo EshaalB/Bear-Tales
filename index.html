@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bear Tales - Book Recommendations</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description"
+        content="Bear Tales helps you discover your next great read with book recommendations based on your mood and preferences. Let our wise bear guide you through the forest of books!" />
+    <meta name="keywords"
+        content="books, book recommendations, reading, Bear Tales, book finder, mood, discover books, save books, jungle, wise bear" />
+    <meta name="author" content="Bear Tales EshaalDev" />
+    <meta name="theme-color" content="#1a3d2e" />
+
+
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <!-- Decorative Background -->
+    <div class="decorative-leaves" aria-hidden="true">
+        <div class="leaf"></div>
+        <div class="leaf"></div>
+        <div class="leaf"></div>
+        <div class="leaf"></div>
+        <div class="leaf"></div>
+        <div class="leaf"></div>
+        <div class="leaf"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar" aria-label="Main navigation">
+        <ul>
+            <li><a href="#intro" class="nav-link active" aria-current="page">Search</a></li>
+            <li><a href="#inputModal" class="nav-link">Book Finder</a></li>
+            <li><a href="#savedBooks" class="nav-link">Saved</a></li>
+        </ul>
+    </nav>
+
+    <!-- Header -->
+    <header class="header">
+        <h1><i class="fas fa-book-open" aria-hidden="true"></i> Bear Tales</h1>
+        <p>Find your next great read in the forest of books</p>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <div class="loader" id="loader" style="display: none;">
+            <div>
+                <ul>
+                    <li>
+                        <svg fill="currentColor" viewBox="0 0 90 120">
+                            <path
+                                d="M90,0 L90,120 L11,120 C4.92486775,120 0,115.075132 0,109 L0,11 C0,4.92486775 4.92486775,0 11,0 L90,0 Z M71.5,81 L18.5,81 C17.1192881,81 16,82.1192881 16,83.5 C16,84.8254834 17.0315359,85.9100387 18.3356243,85.9946823 L18.5,86 L71.5,86 C72.8807119,86 74,84.8807119 74,83.5 C74,82.1745166 72.9684641,81.0899613 71.6643757,81.0053177 L71.5,81 Z M71.5,57 L18.5,57 C17.1192881,57 16,58.1192881 16,59.5 C16,60.8254834 17.0315359,61.9100387 18.3356243,61.9946823 L18.5,62 L71.5,62 C72.8807119,62 74,60.8807119 74,59.5 C74,58.1192881 72.8807119,57 71.5,57 Z M71.5,33 L18.5,33 C17.1192881,33 16,34.1192881 16,35.5 C16,36.8254834 17.0315359,37.9100387 18.3356243,37.9946823 L18.5,38 L71.5,38 C72.8807119,38 74,36.8807119 74,35.5 C74,34.1192881 72.8807119,33 71.5,33 Z">
+                            </path>
+                        </svg>
+                    </li>
+                    <li>
+                        <svg fill="currentColor" viewBox="0 0 90 120">
+                            <path
+                                d="M90,0 L90,120 L11,120 C4.92486775,120 0,115.075132 0,109 L0,11 C0,4.92486775 4.92486775,0 11,0 L90,0 Z M71.5,81 L18.5,81 C17.1192881,81 16,82.1192881 16,83.5 C16,84.8254834 17.0315359,85.9100387 18.3356243,85.9946823 L18.5,86 L71.5,86 C72.8807119,86 74,84.8807119 74,83.5 C74,82.1745166 72.9684641,81.0899613 71.6643757,81.0053177 L71.5,81 Z M71.5,57 L18.5,57 C17.1192881,57 16,58.1192881 16,59.5 C16,60.8254834 17.0315359,61.9100387 18.3356243,61.9946823 L18.5,62 L71.5,62 C72.8807119,62 74,60.8807119 74,59.5 C74,58.1192881 72.8807119,57 71.5,57 Z M71.5,33 L18.5,33 C17.1192881,33 16,34.1192881 16,35.5 C16,36.8254834 17.0315359,37.9100387 18.3356243,37.9946823 L18.5,38 L71.5,38 C72.8807119,38 74,36.8807119 74,35.5 C74,34.1192881 72.8807119,33 71.5,33 Z">
+                            </path>
+                        </svg>
+                    </li>
+                    <li>
+                        <svg fill="currentColor" viewBox="0 0 90 120">
+                            <path
+                                d="M90,0 L90,120 L11,120 C4.92486775,120 0,115.075132 0,109 L0,11 C0,4.92486775 4.92486775,0 11,0 L90,0 Z M71.5,81 L18.5,81 C17.1192881,81 16,82.1192881 16,83.5 C16,84.8254834 17.0315359,85.9100387 18.3356243,85.9946823 L18.5,86 L71.5,86 C72.8807119,86 74,84.8807119 74,83.5 C74,82.1745166 72.9684641,81.0899613 71.6643757,81.0053177 L71.5,81 Z M71.5,57 L18.5,57 C17.1192881,57 16,58.1192881 16,59.5 C16,60.8254834 17.0315359,61.9100387 18.3356243,61.9946823 L18.5,62 L71.5,62 C72.8807119,62 74,60.8807119 74,59.5 C74,58.1192881 72.8807119,57 71.5,57 Z M71.5,33 L18.5,33 C17.1192881,33 16,34.1192881 16,35.5 C16,36.8254834 17.0315359,37.9100387 18.3356243,37.9946823 L18.5,38 L71.5,38 C72.8807119,38 74,36.8807119 74,35.5 C74,34.1192881 72.8807119,33 71.5,33 Z">
+                            </path>
+                        </svg>
+                    </li>
+                    <li>
+                        <svg fill="currentColor" viewBox="0 0 90 120">
+                            <path
+                                d="M90,0 L90,120 L11,120 C4.92486775,120 0,115.075132 0,109 L0,11 C0,4.92486775 4.92486775,0 11,0 L90,0 Z M71.5,81 L18.5,81 C17.1192881,81 16,82.1192881 16,83.5 C16,84.8254834 17.0315359,85.9100387 18.3356243,85.9946823 L18.5,86 L71.5,86 C72.8807119,86 74,84.8807119 74,83.5 C74,82.1745166 72.9684641,81.0899613 71.6643757,81.0053177 L71.5,81 Z M71.5,57 L18.5,57 C17.1192881,57 16,58.1192881 16,59.5 C16,60.8254834 17.0315359,61.9100387 18.3356243,61.9946823 L18.5,62 L71.5,62 C72.8807119,62 74,60.8807119 74,59.5 C74,58.1192881 72.8807119,57 71.5,57 Z M71.5,33 L18.5,33 C17.1192881,33 16,34.1192881 16,35.5 C16,36.8254834 17.0315359,37.9100387 18.3356243,37.9946823 L18.5,38 L71.5,38 C72.8807119,38 74,36.8807119 74,35.5 C74,34.1192881 72.8807119,33 71.5,33 Z">
+                            </path>
+                        </svg>
+                    </li>
+                    <li>
+                        <svg fill="currentColor" viewBox="0 0 90 120">
+                            <path
+                                d="M90,0 L90,120 L11,120 C4.92486775,120 0,115.075132 0,109 L0,11 C0,4.92486775 4.92486775,0 11,0 L90,0 Z M71.5,81 L18.5,81 C17.1192881,81 16,82.1192881 16,83.5 C16,84.8254834 17.0315359,85.9100387 18.3356243,85.9946823 L18.5,86 L71.5,86 C72.8807119,86 74,84.8807119 74,83.5 C74,82.1745166 72.9684641,81.0899613 71.6643757,81.0053177 L71.5,81 Z M71.5,57 L18.5,57 C17.1192881,57 16,58.1192881 16,59.5 C16,60.8254834 17.0315359,61.9100387 18.3356243,61.9946823 L18.5,62 L71.5,62 C72.8807119,62 74,60.8807119 74,59.5 C74,58.1192881 72.8807119,57 71.5,57 Z M71.5,33 L18.5,33 C17.1192881,33 16,34.1192881 16,35.5 C16,36.8254834 17.0315359,37.9100387 18.3356243,37.9946823 L18.5,38 L71.5,38 C72.8807119,38 74,36.8807119 74,35.5 C74,34.1192881 72.8807119,33 71.5,33 Z">
+                            </path>
+                        </svg>
+                    </li>
+                    <li>
+                        <svg fill="currentColor" viewBox="0 0 90 120">
+                            <path
+                                d="M90,0 L90,120 L11,120 C4.92486775,120 0,115.075132 0,109 L0,11 C0,4.92486775 4.92486775,0 11,0 L90,0 Z M71.5,81 L18.5,81 C17.1192881,81 16,82.1192881 16,83.5 C16,84.8254834 17.0315359,85.9100387 18.3356243,85.9946823 L18.5,86 L71.5,86 C72.8807119,86 74,84.8807119 74,83.5 C74,82.1745166 72.9684641,81.0899613 71.6643757,81.0053177 L71.5,81 Z M71.5,57 L18.5,57 C17.1192881,57 16,58.1192881 16,59.5 C16,60.8254834 17.0315359,61.9100387 18.3356243,61.9946823 L18.5,62 L71.5,62 C72.8807119,62 74,60.8807119 74,59.5 C74,58.1192881 72.8807119,57 71.5,57 Z M71.5,33 L18.5,33 C17.1192881,33 16,34.1192881 16,35.5 C16,36.8254834 17.0315359,37.9100387 18.3356243,37.9946823 L18.5,38 L71.5,38 C72.8807119,38 74,36.8807119 74,35.5 C74,34.1192881 72.8807119,33 71.5,33 Z">
+                            </path>
+                        </svg>
+                    </li>
+                </ul>
+            </div><span>Loading</span>
+        </div>
+
+        <!-- Intro Section -->
+        <section id="intro" class="section visible" aria-labelledby="intro-heading">
+            <div class="wood-panel">
+                <div class="bear-img" aria-hidden="true"></div>
+                <h2 id="intro-heading">Welcome to Bear Tales</h2>
+                <p>Our Wise Bear will guide you through your next journey</p>
+                <form id="search-form" class="search-bar" role="search">
+                    <input type="text" id="titleInput" placeholder="Enter book title or author..." required
+                        aria-label="Search for books by title or author" />
+                    <div class="main-btns">
+                        <button type="submit" id="titleSearchBtn">Search</button>
+                </form>
+                <button id="book-picker-btn" type="button" aria-controls="inputModal">Decide Book</button>
+            </div>
+
+            </div>
+        </section>
+
+        <!-- Book Picker Modal -->
+        <section id="inputModal" class="section hidden" aria-labelledby="form-heading">
+            <div class="wood-panel">
+                <h2 id="form-heading">Find Your Book</h2>
+                <form id="book-picker-form">
+                    <div class="question">
+                        <label for="q1">What kind of vibe are you in the mood for?</label>
+                        <select id="q1" name="q1" required>
+                            <option value="">--Select--</option>
+                            <option value="romance">Feel-good and uplifting</option>
+                            <option value="mystery">Suspenseful and mysterious</option>
+                            <option value="philosophy">Deep and introspective</option>
+                            <option value="fantasy">Magical and whimsical</option>
+                            <option value="nonfiction">Smart and factual</option>
+                        </select>
+                    </div>
+                    <div class="question">
+                        <label for="q2">Which character would you rather follow?</label>
+                        <select id="q2" name="q2" required>
+                            <option value="">--Select--</option>
+                            <option value="detective">A clever detective</option>
+                            <option value="dystopia">A rebel breaking the rules</option>
+                            <option value="fantasy_character">A wizard discovering secrets</option>
+                            <option value="literature">A thinker figuring life out</option>
+                            <option value="science">A visionary building something</option>
+                        </select>
+                    </div>
+                    <div class="question">
+                        <label for="q3">Pick your dream setting:</label>
+                        <select id="q3" name="q3" required>
+                            <option value="">--Select--</option>
+                            <option value="fairy_tale">A magical kingdom</option>
+                            <option value="crime">A dark city with secrets</option>
+                            <option value="sci-fi">A futuristic world</option>
+                            <option value="nature">A quiet countryside</option>
+                            <option value="coming_of_age">A classic school or campus</option>
+                        </select>
+                    </div>
+                    <div class="form-buttons">
+                        <button type="submit" id="search">Find My Books</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- Search Results -->
+        <section id="results" class="section hidden" aria-labelledby="results-heading">
+            <div class="wood-panel">
+                <h2 id="results-heading">Your Jungle Book List</h2>
+                <div class="books-container" id="bookResults" role="region" aria-live="polite"></div>
+                <div class="more-btn">
+                    <button id="more-books-btn" type="button">More Books</button>
+                    <button id="back-to-picker-btn" type="button">Back to Book Picker</button>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Saved Books -->
+        <section id="savedBooks" class="section hidden" aria-labelledby="saved-books-heading">
+            <div class="wood-panel">
+                <h2 id="saved-books-heading">Your Saved Books</h2>
+                <div class="books-container" id="savedBooksContainer" role="region" aria-live="polite"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 | Bear Tales</p>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>
