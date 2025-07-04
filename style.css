@@ -652,6 +652,7 @@ footer {
         align-items: center;
         z-index: 999;
         padding-top: 60px;
+        gap: 32px;
     }
 
     .nav-links.open {
@@ -659,13 +660,15 @@ footer {
     }
 
     .nav-link {
-        font-size: 1.2rem;
-        padding: 15px 25px;
-        margin: 10px 0;
+        font-size: 2rem;
+        padding: 22px 32px;
+        margin: 24px 0;
+        display: block;
+        text-align: center;
     }
 
     .books-container {
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     }
 
     .wood-panel {
