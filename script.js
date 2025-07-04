@@ -1,351 +1,380 @@
-function showLoader() {
-    DOM.loader.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-}
-function hideLoader() {
-    DOM.loader.style.display = 'none';
-    document.body.style.overflow = '';
-}
-
-const DOM = {
-    introSection: document.getElementById('intro'),
-    inputModal: document.getElementById('inputModal'),
-    resultsSection: document.getElementById('results'),
-    savedBooksSection: document.getElementById('savedBooks'),
-    searchBtn: document.getElementById('search'),
-    moreBooksBtn: document.getElementById('more-books-btn'),
-    restartBtn: document.getElementById('restart-btn'),
-    titleInput: document.getElementById('titleInput'),
-    titleSearchBtn: document.getElementById('titleSearchBtn'),
-    loader: document.getElementById('loader'),
-    bookResults: document.getElementById('bookResults'),
-    savedBooksContainer: document.getElementById('savedBooksContainer'),
-    navLinks: document.querySelectorAll('.nav-link')
-};
-
-const keywordMap = {
-    romance: 'love OR romance OR uplifting',
-    mystery: 'mystery OR thriller OR suspense',
-    philosophy: 'life OR philosophy OR introspection',
-    fantasy: 'fantasy OR magic OR adventure',
-    nonfiction: 'non-fiction OR true story OR biography',
-    detective: 'detective OR crime OR investigation',
-    dystopia: 'dystopia OR rebellion OR society',
-    fantasy_character: 'wizard OR chosen one OR fantasy hero',
-    literature: 'philosopher OR thinker OR classic literature',
-    science: 'inventor OR science OR tech innovator',
-    fairy_tale: 'fairy tale OR enchanted kingdom',
-    crime: 'city OR noir OR gritty',
-    'sci-fi': 'space OR future OR sci-fi',
-    nature: 'countryside OR nature OR wilderness',
-    coming_of_age: 'school OR campus OR coming of age'
-};
-
-function toggleSection(targetId) {
-    const sections = [DOM.introSection, DOM.inputModal, DOM.resultsSection, DOM.savedBooksSection];
-    sections.forEach(section => {
-        section.classList.toggle('visible', section.id === targetId);
-        section.classList.toggle('hidden', section.id !== targetId);
-    });
-
-    DOM.navLinks.forEach(link => {
-        link.classList.toggle('active', link.getAttribute('href') === `#${targetId}`);
-    });
-
-    if (targetId === 'savedBooks') showSavedBooks();
-}
-
-async function fetchBookDescription(key) {
-    try {
-        const res = await fetch(`https://openlibrary.org${key}.json`);
-        const data = await res.json();
-        return typeof data.description === 'string'
-            ? data.description
-            : data.description?.value || 'No description available.';
-    } catch {
-        return 'No description available.';
-    }
-}
-
-async function shareBook(book) {
-    const shareData = {
-        title: book.title || 'Book Recommendation',
-        text: `${book.title} by ${book.author || 'Unknown'} - Check out this book!`,
-        url: `https://openlibrary.org${book.key}`
+// Book Search Application
+class BookSearchApp {
+    // DOM Elements
+    static DOM = {
+        introSection: document.getElementById('intro'),
+        inputModal: document.getElementById('inputModal'),
+        resultsSection: document.getElementById('results'),
+        savedBooksSection: document.getElementById('savedBooks'),
+        searchBtn: document.getElementById('search'),
+        moreBooksBtn: document.getElementById('more-books-btn'),
+        titleInput: document.getElementById('titleInput'),
+        titleSearchBtn: document.getElementById('titleSearchBtn'),
+        loader: document.getElementById('loader'),
+        bookResults: document.getElementById('bookResults'),
+        savedBooksContainer: document.getElementById('savedBooksContainer'),
+        navLinks: document.querySelectorAll('.nav-link'),
+        hamburgerBtn: document.getElementById('hamburger-btn'),
+        navLinksContainer: document.getElementById('nav-links'),
+        bookPickerBtn: document.getElementById('book-picker-btn'),
+        backToPickerBtn: document.getElementById('back-to-picker-btn'),
+        bookPickerForm: document.getElementById('book-picker-form')
     };
 
-    try {
-        if (navigator.share) {
-            await navigator.share(shareData);
-        } else {
-            await navigator.clipboard.writeText(shareData.url);
-            await Swal.fire({
+    // Keyword mapping for book preferences
+    static keywordMap = {
+        romance: 'love OR romance OR uplifting',
+        mystery: 'mystery OR thriller OR suspense',
+        philosophy: 'life OR philosophy OR introspection',
+        fantasy: 'fantasy OR magic OR adventure',
+        nonfiction: 'non-fiction OR true story OR biography',
+        detective: 'detective OR crime OR investigation',
+        dystopia: 'dystopia OR rebellion OR society',
+        fantasy_character: 'wizard OR chosen one OR fantasy hero',
+        literature: 'philosopher OR thinker OR classic literature',
+        science: 'inventor OR science OR tech innovator',
+        fairy_tale: 'fairy tale OR enchanted kingdom',
+        crime: 'city OR noir OR gritty',
+        'sci-fi': 'space OR future OR sci-fi',
+        nature: 'countryside OR nature OR wilderness',
+        coming_of_age: 'school OR campus OR coming of age'
+    };
+
+    // Sample book data for demonstration
+    static sampleBooks = [
+        {
+            title: "The Jungle Book",
+            author: "Rudyard Kipling",
+            key: "/works/OL82539W",
+            description: "The story of Mowgli, a boy raised by wolves in the Indian jungle.",
+            cover_i: 840678
+        },
+        // ... other sample books (omitted for brevity)
+    ];
+
+    // UI Management
+    static showLoader() {
+        this.DOM.loader.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    static hideLoader() {
+        this.DOM.loader.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    static toggleSection(targetId) {
+        const sections = [
+            this.DOM.introSection,
+            this.DOM.inputModal,
+            this.DOM.resultsSection,
+            this.DOM.savedBooksSection
+        ];
+
+        sections.forEach(section => {
+            if (!section) return;
+            section.classList.toggle('visible', section.id === targetId);
+            section.classList.toggle('hidden', section.id !== targetId);
+        });
+
+        this.DOM.navLinks.forEach(link => {
+            link.classList.toggle('active', link.getAttribute('href') === `#${targetId}`);
+        });
+
+        if (window.innerWidth <= 768) {
+            this.DOM.hamburgerBtn.classList.remove('open');
+            this.DOM.navLinksContainer.classList.remove('open');
+        }
+
+        if (targetId === 'savedBooks') this.showSavedBooks();
+    }
+
+    // Book Card Creation
+    static createBookCard(book, isSaved = false) {
+        const title = book.title || 'No title';
+        const author = book.author || book.author_name?.[0] || 'Unknown';
+        const coverId = book.cover_i || book.covers?.[0];
+        const coverURL = coverId
+            ? `https://covers.openlibrary.org/b/id/${coverId}-M.jpg`
+            : 'https://via.placeholder.com/150x200?text=No+Cover';
+        const key = book.key || '';
+        const description = book.description || 'No description available.';
+
+        return `
+            <div class="book-card" data-key="${key}">
+                <img src="${coverURL}" alt="${title}" class="book-cover" onerror="this.src='https://via.placeholder.com/150x200?text=No+Cover';">
+                <div class="book-title">${title}</div>
+                <div class="book-author">${author}</div>
+                <div class="book-details">
+                    <h3>${title}</h3>
+                    <p class="book-author">${author}</p>
+                    <p class="book-description">${description}</p>
+                    <div class="book-actions">
+                        <button class="${isSaved ? 'remove-book' : 'save-book'}" data-key="${key}">
+                            <i class="fas ${isSaved ? 'fa-trash' : 'fa-bookmark'}"></i> ${isSaved ? 'Remove' : 'Save'}
+                        </button>
+                        <button class="share-btn" data-title="${title}" data-author="${author}" data-key="${key}">
+                            <i class="fas fa-share-alt"></i> Share
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    // Book Card Event Listeners
+    static addBookCardListeners(container) {
+        if (!container) return;
+
+        container.querySelectorAll('.book-card').forEach(card => {
+            card.addEventListener('click', function (e) {
+                if (e.target.closest('button')) return;
+                this.classList.toggle('show-details');
+            });
+        });
+
+        container.querySelectorAll('.save-book').forEach(button => {
+            button.addEventListener('click', () => this.saveBook(button));
+        });
+
+        container.querySelectorAll('.remove-book').forEach(button => {
+            button.addEventListener('click', () => this.removeBook(button));
+        });
+
+        container.querySelectorAll('.share-btn').forEach(button => {
+            button.addEventListener('click', () => this.shareBook(button));
+        });
+    }
+
+    static saveBook(button) {
+        const card = button.closest('.book-card');
+        const key = button.dataset.key;
+        const book = {
+            key,
+            title: card.querySelector('.book-title').textContent,
+            author: card.querySelector('.book-author').textContent,
+            description: card.querySelector('.book-description').textContent,
+            cover_i: card.querySelector('img').src.match(/\/b\/id\/(\d+)-M\.jpg/)?.[1] || null
+        };
+
+        const savedBooks = JSON.parse(localStorage.getItem('savedBooks') || '[]');
+        if (!savedBooks.find(b => b.key === key)) {
+            savedBooks.push(book);
+            localStorage.setItem('savedBooks', JSON.stringify(savedBooks));
+            Swal.fire({
+                title: 'Saved!',
+                text: 'Book added to your favorites.',
                 icon: 'success',
-                title: 'Link Copied!',
-                text: 'Link copied to clipboard: ' + shareData.url,
-                confirmButtonColor: '#1a3d2e',
-                confirmButtonText: 'OK'
+                confirmButtonColor: '#14532d',
+                confirmButtonText: 'Got it 🐻'
+            });
+            button.innerHTML = '<i class="fas fa-bookmark"></i> Saved';
+            button.classList.add('saved');
+        } else {
+            Swal.fire({
+                title: 'Already Saved!',
+                text: 'This book is already in your saved list.',
+                icon: 'info',
+                confirmButtonColor: '#14532d',
+                confirmButtonText: 'Okay'
             });
         }
-    } catch (err) {
-        console.error('Share failed:', err);
-        await navigator.clipboard.writeText(shareData.url);
-        alert('Failed to share. Link copied to clipboard: ' + shareData.url);
     }
-}
 
-function createBookCard(book, isSaved = false) {
-    const title = book.title || 'No title';
-    const author = book.author || book.author_name?.[0] || 'Unknown';
-    const coverId = book.cover_i || book.covers?.[0];
-    const coverURL = coverId
-        ? `https://covers.openlibrary.org/b/id/${coverId}-M.jpg`
-        : 'https://via.placeholder.com/150x200?text=No+Cover';
-    const key = book.key || '';
+    static removeBook(button) {
+        const key = button.dataset.key;
+        const savedBooks = JSON.parse(localStorage.getItem('savedBooks') || [])
+            .filter(book => book.key !== key);
+        localStorage.setItem('savedBooks', JSON.stringify(savedBooks));
 
-    return `
-        <div class="book-card" data-key="${key}">
-            <img src="${coverURL}" alt="${title}" class="book-cover">
-            <div class="book-title">${title}</div>
-            <div class="book-author">${author}</div>
-            <div class="book-details">
-                <h3>${title}</h3>
-                <p class="book-author">${author}</p>
-                <p class="book-description">${book.description || 'No description available.'}</p>
-                <div class="book-actions">
-                    <button class="${isSaved ? 'remove-book' : 'save-book'}" data-key="${key}">
-                        ${isSaved ? 'Remove' : 'Save'}
-                    </button>
-                    <button class="share-btn" data-title="${title}" data-author="${author}" data-key="${key}">
-                        Share
-                    </button>
-                </div>
-            </div>
-        </div>`;
-}
+        Swal.fire({
+            title: 'Removed!',
+            text: 'Book removed from your saved list.',
+            icon: 'info',
+            confirmButtonColor: '#14532d',
+            confirmButtonText: 'Okay'
+        }).then(() => {
+            this.showSavedBooks();
+        });
+    }
 
-function addBookCardListeners(container) {
-    container.querySelectorAll('.save-book').forEach(button => {
-        button.addEventListener('click', () => {
-            const key = button.dataset.key;
-            const saved = JSON.parse(localStorage.getItem('savedBooks') || '[]');
-            if (!saved.includes(key)) {
-                saved.push(key);
-                localStorage.setItem('savedBooks', JSON.stringify(saved));
-                button.textContent = 'Saved';
-                button.disabled = true;
+    static shareBook(button) {
+        const { title, author } = button.dataset;
+        if (navigator.share) {
+            navigator.share({
+                title: `Book Recommendation: ${title}`,
+                text: `Check out "${title}" by ${author} on Bear Tales!`,
+                url: window.location.href
+            }).catch(err => console.error('Share error:', err));
+        } else {
+            const textArea = document.createElement('textarea');
+            textArea.value = `Check out "${title}" by ${author} on Bear Tales!`;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            Swal.fire({
+                title: 'Copied!',
+                text: 'Book information copied to clipboard!',
+                icon: 'success',
+                confirmButtonColor: '#14532d'
+            });
+        }
+    }
+
+    // Display Saved Books
+    static showSavedBooks() {
+        const savedBooks = JSON.parse(localStorage.getItem('savedBooks') || '[]');
+        this.DOM.savedBooksContainer.innerHTML = savedBooks.length
+            ? savedBooks.map(book => this.createBookCard(book, true)).join('')
+            : '<p class="no-books">No saved books yet. Start exploring to find books to save!</p>';
+        this.addBookCardListeners(this.DOM.savedBooksContainer);
+    }
+
+    // API Calls
+    static async fetchBooks(query, limit = 10) {
+        this.showLoader();
+        this.DOM.bookResults.innerHTML = '';
+
+        try {
+            const response = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=${limit}`);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+            const data = await response.json();
+            if (data.docs?.length) {
+                const books = data.docs.slice(0, limit).map(book => ({
+                    title: book.title,
+                    author: book.author_name?.[0] || 'Unknown',
+                    key: book.key,
+                    // Try multiple fields for description
+                    description: book.description || book.first_sentence?.[0] || book.subjects?.slice(0, 3).join(', ') || 'No description available.',
+                    cover_i: book.cover_i
+                }));
+
+                this.DOM.bookResults.innerHTML = books.map(book => this.createBookCard(book)).join('');
+                this.addBookCardListeners(this.DOM.bookResults);
+            } else {
+                this.DOM.bookResults.innerHTML = `<p class="no-results">No books found for "${query}". Try different preferences.</p>`;
+            }
+        } catch (err) {
+            console.error('API Error:', err);
+            this.DOM.bookResults.innerHTML = '<p class="no-results">Error fetching books. Please try again.</p>';
+        } finally {
+            this.hideLoader();
+        }
+    }
+
+    // Search Functions
+    static searchByPreferences() {
+        const q1 = document.getElementById('q1')?.value;
+        const q2 = document.getElementById('q2')?.value;
+        const q3 = document.getElementById('q3')?.value;
+
+        if (!q1 || !q2 || !q3) {
+            Swal.fire({
+                title: 'Incomplete Input',
+                text: 'Please answer all three questions to find books!',
+                icon: 'warning',
+                confirmButtonColor: '#14532d'
+            });
+            return;
+        }
+
+        const keywords = [
+            this.keywordMap[q1] || 'fiction',
+            this.keywordMap[q2] || 'adventure',
+            this.keywordMap[q3] || 'nature'
+        ];
+        const query = keywords.map(k => `(${k})`).join(' AND ');
+        this.toggleSection('results');
+        this.fetchBooks(query);
+    }
+
+    static searchByTitle() {
+        const query = this.DOM.titleInput.value.trim();
+        if (!query) {
+            Swal.fire({
+                title: 'Empty Search',
+                text: 'Please enter a book title or author to search.',
+                icon: 'warning',
+                confirmButtonColor: '#14532d'
+            });
+            return;
+        }
+        this.toggleSection('results');
+        this.fetchBooks(query, 8);
+    }
+
+    // Decorative Elements
+    static createLeaves() {
+        const leavesContainer = document.querySelector('.jungle-leaves');
+        if (!leavesContainer) return;
+
+        for (let i = 0; i < 15; i++) {
+            const leaf = document.createElement('div');
+            leaf.className = 'leaf';
+            leaf.style.left = `${Math.random() * 100}%`;
+            leaf.style.animationDuration = `${15 + Math.random() * 15}s`;
+            leaf.style.animationDelay = `${Math.random() * 5}s`;
+            leaf.style.opacity = `${0.2 + Math.random() * 0.3}`;
+            leavesContainer.appendChild(leaf);
+        }
+    }
+
+    // Initialize
+    static init() {
+        // Initialize saved books
+        if (!localStorage.getItem('savedBooks')) {
+            localStorage.setItem('savedBooks', JSON.stringify(this.sampleBooks));
+        }
+
+        // Event Listeners
+        this.DOM.navLinks.forEach(link => {
+            link.addEventListener('click', e => {
+                e.preventDefault();
+                this.toggleSection(link.getAttribute('href').substring(1));
+            });
+        });
+
+        this.DOM.hamburgerBtn?.addEventListener('click', function () {
+            this.classList.toggle('open');
+            BookSearchApp.DOM.navLinksContainer.classList.toggle('open');
+        });
+
+        this.DOM.bookPickerBtn?.addEventListener('click', e => {
+            e.preventDefault();
+            this.toggleSection('inputModal');
+        });
+
+        this.DOM.backToPickerBtn?.addEventListener('click', () => {
+            this.toggleSection('inputModal');
+        });
+
+        this.DOM.bookPickerForm?.addEventListener('submit', e => {
+            e.preventDefault();
+            this.searchByPreferences();
+        });
+
+        this.DOM.titleSearchBtn?.addEventListener('click', e => {
+            e.preventDefault();
+            this.searchByTitle();
+        });
+
+        this.DOM.titleInput?.addEventListener('keypress', e => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.searchByTitle();
             }
         });
-    });
 
-    container.querySelectorAll('.remove-book').forEach(button => {
-        button.addEventListener('click', () => {
-            const key = button.dataset.key;
-            const saved = JSON.parse(localStorage.getItem('savedBooks') || '[]')
-                .filter(bookKey => bookKey !== key);
-            localStorage.setItem('savedBooks', JSON.stringify(saved));
-            showSavedBooks();
+        this.DOM.moreBooksBtn?.addEventListener('click', () => {
+            const query = this.DOM.titleInput.value.trim() || 'jungle adventure';
+            this.fetchBooks(query, 12);
         });
-    });
 
-    container.querySelectorAll('.share-btn').forEach(button => {
-        button.addEventListener('click', () => shareBook({
-            title: button.dataset.title,
-            author: button.dataset.author,
-            key: button.dataset.key
-        }));
-    });
-}
-
-async function fetchBooks(query, limit = 6) {
-    try {
-        showLoader();
-        DOM.bookResults.innerHTML = '<p>Loading books...</p>';
-
-        const res = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=${limit}`);
-        const data = await res.json();
-        const books = data.docs || [];
-
-        if (!books.length) {
-            DOM.bookResults.innerHTML = `<p>No books found for "${query}". Try different preferences.</p>`;
-            hideLoader();
-            return [];
-        }
-
-        const fullBooks = await Promise.all(books.map(async book => {
-            book.description = await fetchBookDescription(book.key);
-            return book;
-        }));
-
-        hideLoader();
-        return fullBooks;
-    } catch (err) {
-        DOM.bookResults.innerHTML = `<p>Error: ${err.message}</p>`;
-        hideLoader();
-        return [];
+        // Create decorative leaves
+        this.createLeaves();
     }
 }
 
-function getRandomPreferences() {
-    const keys = Object.keys(keywordMap);
-    const randomPrefs = new Set();
-    while (randomPrefs.size < 3) {
-        const rand = keys[Math.floor(Math.random() * keys.length)];
-        randomPrefs.add(rand);
-    }
-    return Array.from(randomPrefs);
-}
-
-async function searchByPreferences(generateMore = false) {
-    let selectedValues;
-    const selects = document.querySelectorAll('#book-picker-form select');
-
-    if (generateMore) {
-        selectedValues = getRandomPreferences();
-        selectedValues.forEach((val, idx) => {
-            if (selects[idx]) selects[idx].value = val;
-        });
-    } else {
-        selectedValues = Array.from(selects).map(select => select.value);
-    }
-
-    const keywords = selectedValues.map(val => keywordMap[val] || '').filter(Boolean);
-    if (keywords.length < 3) keywords.push('fiction', 'bestseller');
-
-    const query = keywords.join(' ');
-
-    DOM.bookResults.innerHTML = '';
-    toggleSection('results');
-
-    const books = await fetchBooks(query);
-    if (books.length) {
-        DOM.bookResults.innerHTML = books.map(book => createBookCard(book)).join('');
-        addBookCardListeners(DOM.bookResults);
-    } else {
-        DOM.bookResults.innerHTML = `<p>🧸 Sorry! No books matched your vibe. Try different answers or use the Search tab.</p>`;
-    }
-}
-
-async function searchByTitle() {
-    const query = DOM.titleInput.value.trim();
-    if (!query) {
-        await Swal.fire({
-            icon: 'warning',
-            title: 'Missing Input',
-            text: 'Please enter a book title or author.',
-            confirmButtonColor: '#1a3d2e',
-            confirmButtonText: 'OK'
-        });
-        return;
-    }
-
-    DOM.bookResults.innerHTML = '';
-    toggleSection('results');
-
-    const books = await fetchBooks(query, 8);
-    if (books.length) {
-        DOM.bookResults.innerHTML = books.map(book => createBookCard(book)).join('');
-        addBookCardListeners(DOM.bookResults);
-    }
-}
-
-async function showSavedBooks() {
-    const saved = JSON.parse(localStorage.getItem('savedBooks') || '[]');
-    DOM.savedBooksContainer.innerHTML = saved.length ? '' : '<p>No saved books yet.</p>';
-
-    if (saved.length) {
-        try {
-            const books = await Promise.all(saved.map(async key => {
-                const res = await fetch(`https://openlibrary.org${key}.json`);
-                const book = await res.json();
-                book.key = key;
-                book.description = await fetchBookDescription(key);
-                return book;
-            }));
-
-            DOM.savedBooksContainer.innerHTML = books.map(book => createBookCard(book, true)).join('');
-            addBookCardListeners(DOM.savedBooksContainer);
-        } catch {
-            DOM.savedBooksContainer.innerHTML = '<p>Failed to load saved books.</p>';
-        }
-    }
-}
-
-function enableMobileCardToggle() {
-    if (window.innerWidth <= 768) {
-        document.querySelectorAll('.book-card').forEach(card => {
-            card.addEventListener('click', function (e) {
-                if (e.target.closest('.book-details')) return;
-                document.querySelectorAll('.book-card.show-details').forEach(openCard => {
-                    if (openCard !== card) openCard.classList.remove('show-details');
-                });
-                card.classList.toggle('show-details');
-            });
-        });
-    }
-}
-
-function initEventListeners() {
-    DOM.searchBtn.addEventListener('click', e => {
-        e.preventDefault();
-        searchByPreferences();
-    });
-
-    DOM.moreBooksBtn.addEventListener('click', e => {
-        e.preventDefault();
-        searchByPreferences(true);
-    });
-
-    DOM.titleSearchBtn.addEventListener('click', e => {
-        e.preventDefault();
-        searchByTitle();
-    });
-
-    DOM.titleInput.addEventListener('keydown', e => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            searchByTitle();
-        }
-    });
-
-    DOM.navLinks.forEach(link => {
-        link.addEventListener('click', e => {
-            e.preventDefault();
-            const target = link.getAttribute('href').substring(1);
-            toggleSection(target);
-        });
-    });
-
-    const pickerBtn = document.getElementById('book-picker-btn');
-    if (pickerBtn) {
-        pickerBtn.addEventListener('click', e => {
-            e.preventDefault();
-            toggleSection('inputModal');
-        });
-    }
-
-    const backBtn = document.getElementById('back-to-picker-btn');
-    if (backBtn) {
-        backBtn.addEventListener('click', () => toggleSection('inputModal'));
-    }
-
-    if (DOM.restartBtn) {
-        DOM.restartBtn.addEventListener('click', () => toggleSection('intro'));
-    }
-
-    // Mobile Nav Toggle
-    const hamburger = document.getElementById('hamburger-btn');
-    const navLinks = document.querySelector('.nav-links');
-    if (hamburger && navLinks) {
-        hamburger.addEventListener('click', function () {
-            navLinks.classList.toggle('open');
-            const expanded = hamburger.getAttribute('aria-expanded') === 'true';
-            hamburger.setAttribute('aria-expanded', !expanded);
-        });
-    }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    initEventListeners();
-    enableMobileCardToggle();
-});
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => BookSearchApp.init());
