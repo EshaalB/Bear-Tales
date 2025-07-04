@@ -90,6 +90,7 @@ class BookSearchApp {
     }
 
     // Book Card Creation
+
     static createBookCard(book, isSaved = false) {
         const title = book.title || 'No title';
         const author = book.author || book.author_name?.[0] || 'Unknown';
@@ -99,27 +100,32 @@ class BookSearchApp {
             : 'https://via.placeholder.com/150x200?text=No+Cover';
         const key = book.key || '';
         const description = book.description || 'No description available.';
+        const isLong = description.length > 220;
 
         return `
-            <div class="book-card" data-key="${key}">
-                <img src="${coverURL}" alt="${title}" class="book-cover" onerror="this.src='https://via.placeholder.com/150x200?text=No+Cover';">
-                <div class="book-title">${title}</div>
-                <div class="book-author">${author}</div>
-                <div class="book-details">
-                    <h3>${title}</h3>
-                    <p class="book-author">${author}</p>
-                    <p class="book-description">${description}</p>
-                    <div class="book-actions">
-                        <button class="${isSaved ? 'remove-book' : 'save-book'}" data-key="${key}">
-                            <i class="fas ${isSaved ? 'fa-trash' : 'fa-bookmark'}"></i> ${isSaved ? 'Remove' : 'Save'}
-                        </button>
-                        <button class="share-btn" data-title="${title}" data-author="${author}" data-key="${key}">
-                            <i class="fas fa-share-alt"></i> Share
-                        </button>
-                    </div>
+        <div class="book-card" data-key="${key}">
+            <img src="${coverURL}" alt="${title}" class="book-cover" onerror="this.src='https://via.placeholder.com/150x200?text=No+Cover';">
+            <div class="book-title">${title}</div>
+            <div class="book-author">${author}</div>
+            <div class="book-details">
+                <h3>${title}</h3>
+                <p class="book-author">${author}</p>
+               <p class="book-description${isLong ? '' : ' expanded'}" data-full="${description.replace(/"/g, '&quot;')}">
+    ${isLong ? description.slice(0, 220) + '...' : description}
+</p>
+                ${isLong ? `<button class="read-more-btn" type="button">Read more</button>` : ''}
+                <div class="book-actions">
+                    <button class="${isSaved ? 'remove-book' : 'save-book'}${isSaved ? ' saved' : ''}" data-key="${key}">
+                        <i class="fas ${isSaved ? 'fa-trash' : 'fa-bookmark'}"></i> ${isSaved ? 'Remove' : 'Save'}
+                    </button>
+                    <button class="share-btn" data-title="${title}" data-author="${author}" data-key="${key}">
+                        <i class="fas fa-share-alt"></i> Share
+                    </button>
                 </div>
-            </div>`;
+            </div>
+        </div>`;
     }
+
 
     // Book Card Event Listeners
     static addBookCardListeners(container) {
@@ -143,6 +149,29 @@ class BookSearchApp {
         container.querySelectorAll('.share-btn').forEach(button => {
             button.addEventListener('click', () => this.shareBook(button));
         });
+        // ...existing code...
+        container.querySelectorAll('.read-more-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                const desc = this.parentElement.querySelector('.book-description');
+                if (desc.classList.contains('expanded')) {
+                    desc.classList.remove('expanded');
+                    desc.innerText = desc.dataset.short || desc.innerText;
+                    this.innerText = 'Read more';
+                } else {
+                    desc.classList.add('expanded');
+                    if (!desc.dataset.short) desc.dataset.short = desc.innerText;
+                    desc.innerText = desc.dataset.full || this.parentElement.bookFullDescription;
+                    if (!desc.dataset.full) {
+                        // Get the full description from the card's dataset or fallback
+                        const full = this.parentElement.bookFullDescription || desc.dataset.short;
+                        desc.dataset.full = full;
+                        desc.innerText = full;
+                    }
+                    this.innerText = 'Show less';
+                }
+            });
+        });
+        // ...existing code...
     }
 
     static saveBook(button) {
@@ -231,6 +260,7 @@ class BookSearchApp {
     }
 
     // API Calls
+
     static async fetchBooks(query, limit = 10) {
         this.showLoader();
         this.DOM.bookResults.innerHTML = '';
@@ -241,14 +271,44 @@ class BookSearchApp {
 
             const data = await response.json();
             if (data.docs?.length) {
-                const books = data.docs.slice(0, limit).map(book => ({
-                    title: book.title,
-                    author: book.author_name?.[0] || 'Unknown',
-                    key: book.key,
-                    // Try multiple fields for description
-                    description: book.description || book.first_sentence?.[0] || book.subjects?.slice(0, 3).join(', ') || 'No description available.',
-                    cover_i: book.cover_i
-                }));
+                // Fetch descriptions for each book using the works API
+                const books = await Promise.all(
+                    data.docs.slice(0, limit).map(async book => {
+                        let description = 'No description available.';
+                        // Try to fetch the work details for a description
+                        if (book.key) {
+                            try {
+                                const workRes = await fetch(`https://openlibrary.org${book.key}.json`);
+                                if (workRes.ok) {
+                                    const workData = await workRes.json();
+                                    if (typeof workData.description === 'string') {
+                                        description = workData.description;
+                                    } else if (typeof workData.description === 'object' && workData.description?.value) {
+                                        description = workData.description.value;
+                                    }
+                                }
+                            } catch (e) {
+                                // Ignore errors, fallback to default description
+                            }
+                        }
+                        // Fallbacks if no description found
+                        if (description === 'No description available.' && book.first_sentence) {
+                            description = Array.isArray(book.first_sentence)
+                                ? book.first_sentence[0]
+                                : book.first_sentence;
+                        } else if (description === 'No description available.' && book.subjects) {
+                            description = book.subjects.slice(0, 3).join(', ');
+                        }
+
+                        return {
+                            title: book.title,
+                            author: book.author_name?.[0] || 'Unknown',
+                            key: book.key,
+                            description,
+                            cover_i: book.cover_i
+                        };
+                    })
+                );
 
                 this.DOM.bookResults.innerHTML = books.map(book => this.createBookCard(book)).join('');
                 this.addBookCardListeners(this.DOM.bookResults);
@@ -262,6 +322,7 @@ class BookSearchApp {
             this.hideLoader();
         }
     }
+
 
     // Search Functions
     static searchByPreferences() {
